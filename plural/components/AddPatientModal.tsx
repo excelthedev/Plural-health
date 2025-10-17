@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useCreatePatient, useCheckDuplicates } from "@/lib/hooks/usePatients";
 import {
   CreatePatientData,
@@ -65,25 +58,6 @@ const ChevronDownIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-  </svg>
-);
-
-const CameraIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
 
@@ -287,12 +261,12 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showInsurance, setShowInsurance] = useState(false);
   const [showDuplicateCheck, setShowDuplicateCheck] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [duplicates, setDuplicates] = useState<unknown[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const createPatientMutation = useCreatePatient();
-  const checkDuplicatesMutation = useCheckDuplicates();
+  // const checkDuplicatesMutation = useCheckDuplicates();
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -335,7 +309,7 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
   }, [isOpen]);
 
   // Handle input changes
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -351,11 +325,15 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
   };
 
   // Handle nested object changes (address, insurance)
-  const handleNestedChange = (parent: string, field: string, value: any) => {
+  const handleNestedChange = (
+    parent: string,
+    field: string,
+    value: unknown
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [parent]: {
-        ...prev[parent as keyof FormData],
+        ...(prev[parent as keyof FormData] as Record<string, unknown>),
         [field]: value,
       },
     }));
@@ -461,48 +439,52 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
   };
 
   // Check for duplicates
-  const handleCheckDuplicates = async () => {
-    if (!validateForm()) {
-      toast.error(
-        "Please fix validation errors before checking for duplicates"
-      );
-      return;
-    }
+  // const handleCheckDuplicates = async () => {
+  //   if (!validateForm()) {
+  //     toast.error(
+  //       "Please fix validation errors before checking for duplicates"
+  //     );
+  //     return;
+  //   }
 
-    try {
-      const result = await checkDuplicatesMutation.mutateAsync({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
-        primaryPhone: formData.primaryPhone,
-        facilityId: "507f1f77bcf86cd799439011", // Mock facility ID
-      });
+  //   try {
+  //     const result = await checkDuplicatesMutation.mutateAsync({
+  //       firstName: formData.firstName,
+  //       lastName: formData.lastName,
+  //       dateOfBirth: formData.dateOfBirth,
+  //       gender: formData.gender,
+  //       primaryPhone: formData.primaryPhone,
+  //       facilityId: "507f1f77bcf86cd799439011", // Mock facility ID
+  //     });
 
-      if (result.hasDuplicates) {
-        setDuplicates(result.duplicates);
-        setShowDuplicateCheck(true);
-        toast.warning(
-          `Found ${result.duplicates.length} potential duplicate(s)`
-        );
-      } else {
-        toast.success("No duplicates found");
-      }
-    } catch (error) {
-      toast.error("Failed to check for duplicates");
-    }
-  };
+  //     if (result.hasDuplicates) {
+  //       setDuplicates(result.duplicates);
+  //       setShowDuplicateCheck(true);
+  //       toast.warning(
+  //         `Found ${result.duplicates.length} potential duplicate(s)`
+  //       );
+  //     } else {
+  //       toast.success("No duplicates found");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to check for duplicates");
+  //   }
+  // };
 
   // Handle duplicate selection
-  const handleSelectDuplicate = (duplicate: any) => {
+  const handleSelectDuplicate = (duplicate: unknown) => {
     // Pre-fill form with duplicate data
+    const duplicateData = duplicate as Record<string, unknown>;
     setFormData((prev) => ({
       ...prev,
-      firstName: duplicate.name.split(" ")[0] || prev.firstName,
-      lastName: duplicate.name.split(" ").slice(1).join(" ") || prev.lastName,
-      primaryPhone: duplicate.phone || prev.primaryPhone,
-      dateOfBirth: duplicate.dateOfBirth || prev.dateOfBirth,
-      email: duplicate.email || prev.email,
+      firstName:
+        (duplicateData.name as string)?.split(" ")[0] || prev.firstName,
+      lastName:
+        (duplicateData.name as string)?.split(" ").slice(1).join(" ") ||
+        prev.lastName,
+      primaryPhone: (duplicateData.phone as string) || prev.primaryPhone,
+      dateOfBirth: (duplicateData.dateOfBirth as string) || prev.dateOfBirth,
+      email: (duplicateData.email as string) || prev.email,
     }));
     setShowDuplicateCheck(false);
     toast.info("Form pre-filled with existing patient data");
@@ -512,10 +494,10 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Please fix validation errors");
-      return;
-    }
+    // if (!validateForm()) {
+    //   toast.error("Please fix validation errors");
+    //   return;
+    // }
 
     setIsSubmitting(true);
 
@@ -564,8 +546,8 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
         setShowDuplicateCheck(true);
         toast.warning("Potential duplicates found. Please review.");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create patient");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to create patient");
     } finally {
       setIsSubmitting(false);
     }
@@ -573,12 +555,16 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0 bg-gray-50 rounded-lg shadow-lg">
+      <DialogContent className="w-fit max-h-[90vh] overflow-y-auto p-0 bg-gray-50 rounded-lg shadow-lg">
         {/* Custom Header */}
         <div className="flex items-center justify-between p-6 bg-white border-b border-gray-200">
           <div>
-            <h2 className="text-2xl font-bold text-[#051438]">Add new patient</h2>
-            <p className="text-gray-600 mt-1">Fill in the patient information in the fields provided below</p>
+            <h2 className="text-2xl font-bold text-[#051438]">
+              Add new patient
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Fill in the patient information in the fields provided below
+            </p>
           </div>
           <Button
             type="button"
@@ -591,7 +577,7 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-6 bg-white">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Left Section: Patient Photo */}
             <div className="lg:col-span-1 space-y-4">
@@ -625,7 +611,7 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                   className="w-full flex items-center justify-center space-x-2 text-white bg-[#051438] border-[#051438] hover:bg-[#051438]/90 rounded-lg h-10"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <span>Take patient's picture</span>
+                  <span>Take patient&apos;s picture</span>
                   <ChevronDownIcon />
                 </Button>
 
@@ -652,10 +638,11 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                 <div className="bg-orange-100 border border-orange-200 rounded-lg p-3 flex items-start space-x-2">
                   <InfoIcon />
                   <p className="text-sm text-orange-800">
-                    If there is an existing Patient ID, input the patient's existing ID into the field.
+                    If there is an existing Patient ID, input the patient&apos;s
+                    existing ID into the field.
                   </p>
                 </div>
-                
+
                 <div>
                   <Label
                     htmlFor="patientId"
@@ -677,7 +664,7 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                     </div>
                   </div>
                 </div>
-                
+
                 {/* New Patient Toggle */}
                 <div className="flex items-center justify-end">
                   <Label
@@ -697,190 +684,196 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
               </div>
 
               {/* Personal Information */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="title" className="text-[#051438] font-medium">
-                    Title<span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    onValueChange={(value) => handleInputChange("title", value)}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mr">Mr.</SelectItem>
-                      <SelectItem value="Ms">Ms.</SelectItem>
-                      <SelectItem value="Dr">Dr.</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="firstName"
-                    className="text-[#051438] font-medium"
-                  >
-                    First name<span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
-                    className={`mt-1 ${
-                      errors.firstName ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors.firstName && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.firstName}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="middleName"
-                    className="text-[#051438] font-medium"
-                  >
-                    Middle name
-                  </Label>
-                  <Input
-                    id="middleName"
-                    value={formData.middleName}
-                    onChange={(e) =>
-                      handleInputChange("middleName", e.target.value)
-                    }
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="lastName"
-                    className="text-[#051438] font-medium"
-                  >
-                    Last name<span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
-                    className={`mt-1 ${
-                      errors.lastName ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors.lastName && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.lastName}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="dob" className="text-[#051438] font-medium">
-                    Date of birth<span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative mt-1">
+              <div className="space-y-6">
+                {/* First Row: Name Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="firstName"
+                      className="text-[#051438] font-medium"
+                    >
+                      First name<span className="text-red-500">*</span>
+                    </Label>
                     <Input
-                      id="dob"
-                      type="date"
-                      value={formData.dateOfBirth}
+                      id="firstName"
+                      value={formData.firstName}
                       onChange={(e) =>
-                        handleInputChange("dateOfBirth", e.target.value)
+                        handleInputChange("firstName", e.target.value)
                       }
-                      className={`pr-8 ${
-                        errors.dateOfBirth ? "border-red-500" : ""
+                      placeholder="First name"
+                      className={`mt-1 bg-white border-gray-300 ${
+                        errors.firstName ? "border-red-500" : ""
                       }`}
                     />
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                      <CalendarIcon />
-                    </div>
+                    {errors.firstName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.firstName}
+                      </p>
+                    )}
                   </div>
-                  {errors.dateOfBirth && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.dateOfBirth}
-                    </p>
-                  )}
-                </div>
 
-                <div>
-                  <Label
-                    htmlFor="gender"
-                    className="text-[#051438] font-medium"
-                  >
-                    Gender<span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleInputChange("gender", value)
-                    }
-                  >
-                    <SelectTrigger
-                      className={`mt-1 ${
-                        errors.gender ? "border-red-500" : ""
-                      }`}
+                  <div>
+                    <Label
+                      htmlFor="middleName"
+                      className="text-[#051438] font-medium"
                     >
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.gender && (
-                    <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
-                  )}
+                      Middle name
+                    </Label>
+                    <Input
+                      id="middleName"
+                      value={formData.middleName}
+                      onChange={(e) =>
+                        handleInputChange("middleName", e.target.value)
+                      }
+                      placeholder="Middle name"
+                      className="mt-1 bg-white border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="lastName"
+                      className="text-[#051438] font-medium"
+                    >
+                      Last name<span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) =>
+                        handleInputChange("lastName", e.target.value)
+                      }
+                      placeholder="Last name"
+                      className={`mt-1 ${
+                        errors.lastName ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.lastName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.lastName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="title"
+                      className="text-[#051438] font-medium"
+                    >
+                      Title
+                    </Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleInputChange("title", value)
+                      }
+                    >
+                      <SelectTrigger className="mt-1 bg-white border-gray-300">
+                        <SelectValue placeholder="Title" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Mr">Mr.</SelectItem>
+                        <SelectItem value="Ms">Ms.</SelectItem>
+                        <SelectItem value="Dr">Dr.</SelectItem>
+                        <SelectItem value="Mrs">Mrs.</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
+                {/* Second Row: DOB, Gender, Phone */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="dob" className="text-[#051438] font-medium">
+                      Date of birth<span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="dob"
+                        type="date"
+                        value={formData.dateOfBirth}
+                        onChange={(e) =>
+                          handleInputChange("dateOfBirth", e.target.value)
+                        }
+                        placeholder="Date of birth"
+                        className={`pr-8 ${
+                          errors.dateOfBirth ? "border-red-500" : ""
+                        }`}
+                      />
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <CalendarIcon />
+                      </div>
+                    </div>
+                    {errors.dateOfBirth && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.dateOfBirth}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="gender"
+                      className="text-[#051438] font-medium"
+                    >
+                      Gender
+                    </Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleInputChange("gender", value)
+                      }
+                    >
+                      <SelectTrigger
+                        className={`mt-1 bg-white border-gray-300 ${
+                          errors.gender ? "border-red-500" : ""
+                        }`}
+                      >
+                        <SelectValue placeholder="Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.gender && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.gender}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="phone"
+                      className="text-[#051438] font-medium"
+                    >
+                      Phone number<span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.primaryPhone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      placeholder="Phone number"
+                      className={`mt-1 ${
+                        errors.primaryPhone ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.primaryPhone && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.primaryPhone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Third Row: Address */}
                 <div>
-                  <Label htmlFor="phone" className="text-[#051438] font-medium">
-                    Phone number<span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.primaryPhone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="+2348012345678"
-                    className={`mt-1 ${
-                      errors.primaryPhone ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors.primaryPhone && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.primaryPhone}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end pt-6">
-                  <Label
-                    htmlFor="newPatient"
-                    className="mr-2 text-sm text-gray-700"
-                  >
-                    Is patient new to the hospital?
-                  </Label>
-                  <Switch
-                    id="newPatient"
-                    checked={formData.isNewPatient}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("isNewPatient", checked)
-                    }
-                  />
-                </div>
-
-                <div className="md:col-span-4">
                   <Label
                     htmlFor="address"
                     className="text-[#051438] font-medium"
                   >
-                    Street Address<span className="text-red-500">*</span>
+                    Address
                   </Label>
                   <Input
                     id="address"
@@ -888,6 +881,7 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                     onChange={(e) =>
                       handleNestedChange("address", "street", e.target.value)
                     }
+                    placeholder="Address"
                     className={`mt-1 ${
                       errors["address.street"] ? "border-red-500" : ""
                     }`}
@@ -899,94 +893,85 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                   )}
                 </div>
 
-                <div className="md:col-span-2">
-                  <Label htmlFor="city" className="text-[#051438] font-medium">
-                    City<span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="city"
-                    value={formData.address.city}
-                    onChange={(e) =>
-                      handleNestedChange("address", "city", e.target.value)
-                    }
-                    className={`mt-1 ${
-                      errors["address.city"] ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors["address.city"] && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors["address.city"]}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="state" className="text-[#051438] font-medium">
-                    State<span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleNestedChange("address", "state", value)
-                    }
-                  >
-                    <SelectTrigger
-                      className={`mt-1 ${
-                        errors["address.state"] ? "border-red-500" : ""
-                      }`}
+                {/* Fourth Row: Email, Nationality, State of Origin */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="email"
+                      className="text-[#051438] font-medium"
                     >
-                      <SelectValue placeholder="Select State" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Lagos">Lagos</SelectItem>
-                      <SelectItem value="Abuja">Abuja</SelectItem>
-                      <SelectItem value="Kano">Kano</SelectItem>
-                      <SelectItem value="Rivers">Rivers</SelectItem>
-                      <SelectItem value="Ogun">Ogun</SelectItem>
-                      <SelectItem value="Oyo">Oyo</SelectItem>
-                      <SelectItem value="Kaduna">Kaduna</SelectItem>
-                      <SelectItem value="Enugu">Enugu</SelectItem>
-                      <SelectItem value="Delta">Delta</SelectItem>
-                      <SelectItem value="Imo">Imo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors["address.state"] && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors["address.state"]}
-                    </p>
-                  )}
-                </div>
+                      Email address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
+                      placeholder="Email address"
+                      className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
 
-                <div>
-                  <Label
-                    htmlFor="zipCode"
-                    className="text-[#051438] font-medium"
-                  >
-                    ZIP Code
-                  </Label>
-                  <Input
-                    id="zipCode"
-                    value={formData.address.zipCode}
-                    onChange={(e) =>
-                      handleNestedChange("address", "zipCode", e.target.value)
-                    }
-                    className="mt-1"
-                  />
-                </div>
+                  <div>
+                    <Label
+                      htmlFor="nationality"
+                      className="text-[#051438] font-medium"
+                    >
+                      Nationality
+                    </Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleInputChange("nationality", value)
+                      }
+                    >
+                      <SelectTrigger className="mt-1 bg-white border-gray-300">
+                        <SelectValue placeholder="Nationality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Nigerian">Nigerian</SelectItem>
+                        <SelectItem value="Ghanaian">Ghanaian</SelectItem>
+                        <SelectItem value="Kenyan">Kenyan</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="md:col-span-2">
-                  <Label htmlFor="email" className="text-[#051438] font-medium">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                  )}
+                  <div>
+                    <Label
+                      htmlFor="stateOfOrigin"
+                      className="text-[#051438] font-medium"
+                    >
+                      State of origin
+                    </Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleInputChange("stateOfOrigin", value)
+                      }
+                    >
+                      <SelectTrigger className="mt-1 bg-white border-gray-300">
+                        <SelectValue placeholder="State of origin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Lagos">Lagos</SelectItem>
+                        <SelectItem value="Abuja">Abuja</SelectItem>
+                        <SelectItem value="Kano">Kano</SelectItem>
+                        <SelectItem value="Rivers">Rivers</SelectItem>
+                        <SelectItem value="Ogun">Ogun</SelectItem>
+                        <SelectItem value="Oyo">Oyo</SelectItem>
+                        <SelectItem value="Kaduna">Kaduna</SelectItem>
+                        <SelectItem value="Enugu">Enugu</SelectItem>
+                        <SelectItem value="Delta">Delta</SelectItem>
+                        <SelectItem value="Imo">Imo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -997,27 +982,22 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                     type="button"
                     variant="ghost"
                     onClick={() => setShowInsurance(!showInsurance)}
-                    className="flex items-center space-x-2 text-[#0B0C7D] px-0 hover:bg-transparent"
+                    className="flex items-center space-x-2 text-[#051438] px-0 hover:bg-transparent font-semibold"
                   >
-                    <span className="font-semibold">Insurance provider</span>
+                    <span>Insurance provider details</span>
                     <ChevronDownIcon />
                   </Button>
-                  <Switch
-                    checked={formData.insurance.hasInsurance}
-                    onCheckedChange={(checked) =>
-                      handleNestedChange("insurance", "hasInsurance", checked)
-                    }
-                  />
                 </div>
 
-                {showInsurance && formData.insurance.hasInsurance && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {showInsurance && (
+                  <div className="space-y-4">
                     <div>
                       <Label
                         htmlFor="insurer"
                         className="text-[#051438] font-medium"
                       >
-                        Insurance Company<span className="text-red-500">*</span>
+                        Insurance provider
+                        <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="insurer"
@@ -1029,6 +1009,7 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                             e.target.value
                           )
                         }
+                        placeholder="Insurance provider"
                         className={`mt-1 ${
                           errors["insurance.insurer"] ? "border-red-500" : ""
                         }`}
@@ -1036,135 +1017,6 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                       {errors["insurance.insurer"] && (
                         <p className="text-red-500 text-xs mt-1">
                           {errors["insurance.insurer"]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="plan"
-                        className="text-[#051438] font-medium"
-                      >
-                        Insurance Plan<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="plan"
-                        value={formData.insurance.plan}
-                        onChange={(e) =>
-                          handleNestedChange(
-                            "insurance",
-                            "plan",
-                            e.target.value
-                          )
-                        }
-                        className={`mt-1 ${
-                          errors["insurance.plan"] ? "border-red-500" : ""
-                        }`}
-                      />
-                      {errors["insurance.plan"] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors["insurance.plan"]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="memberId"
-                        className="text-[#051438] font-medium"
-                      >
-                        Member ID<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="memberId"
-                        value={formData.insurance.memberId}
-                        onChange={(e) =>
-                          handleNestedChange(
-                            "insurance",
-                            "memberId",
-                            e.target.value
-                          )
-                        }
-                        className={`mt-1 ${
-                          errors["insurance.memberId"] ? "border-red-500" : ""
-                        }`}
-                      />
-                      {errors["insurance.memberId"] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors["insurance.memberId"]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="coverageDetails"
-                        className="text-[#051438] font-medium"
-                      >
-                        Coverage Details
-                      </Label>
-                      <Textarea
-                        id="coverageDetails"
-                        value={formData.insurance.coverageDetails}
-                        onChange={(e) =>
-                          handleNestedChange(
-                            "insurance",
-                            "coverageDetails",
-                            e.target.value
-                          )
-                        }
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="startDate"
-                        className="text-[#051438] font-medium"
-                      >
-                        Start Date
-                      </Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={formData.insurance.startDate}
-                        onChange={(e) =>
-                          handleNestedChange(
-                            "insurance",
-                            "startDate",
-                            e.target.value
-                          )
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="endDate"
-                        className="text-[#051438] font-medium"
-                      >
-                        End Date
-                      </Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={formData.insurance.endDate}
-                        onChange={(e) =>
-                          handleNestedChange(
-                            "insurance",
-                            "endDate",
-                            e.target.value
-                          )
-                        }
-                        className={`mt-1 ${
-                          errors["insurance.endDate"] ? "border-red-500" : ""
-                        }`}
-                      />
-                      {errors["insurance.endDate"] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors["insurance.endDate"]}
                         </p>
                       )}
                     </div>
@@ -1182,30 +1034,39 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
                     </h3>
                   </div>
                   <div className="space-y-2">
-                    {duplicates.map((duplicate, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-white rounded border"
-                      >
-                        <div>
-                          <p className="font-medium">{duplicate.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {duplicate.phone} • {duplicate.patientCode} •{" "}
-                            {new Date(
-                              duplicate.dateOfBirth
-                            ).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSelectDuplicate(duplicate)}
+                    {duplicates.map((duplicate, index) => {
+                      const duplicateData = duplicate as Record<
+                        string,
+                        unknown
+                      >;
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-white rounded border"
                         >
-                          Use This
-                        </Button>
-                      </div>
-                    ))}
+                          <div>
+                            <p className="font-medium">
+                              {duplicateData.name as string}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {duplicateData.phone as string} •{" "}
+                              {duplicateData.patientCode as string} •{" "}
+                              {new Date(
+                                duplicateData.dateOfBirth as string
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSelectDuplicate(duplicate)}
+                          >
+                            Use This
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="mt-3 flex space-x-2">
                     <Button
@@ -1221,40 +1082,24 @@ const AddPatientModal: React.FC<AddPatientModalProps> = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-between pt-6 border-t border-gray-200">
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCheckDuplicates}
-                    disabled={checkDuplicatesMutation.isPending}
-                    className="text-[#0B0C7D] border-[#0B0C7D]"
-                  >
-                    {checkDuplicatesMutation.isPending
-                      ? "Checking..."
-                      : "Check Duplicates"}
-                  </Button>
-                </div>
-
-                <div className="flex space-x-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    className="text-[#0B0C7D] border-[#0B0C7D]"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || createPatientMutation.isPending}
-                    className="bg-[#0B0C7D] text-white hover:bg-[#1A2B5B]/90"
-                  >
-                    {isSubmitting || createPatientMutation.isPending
-                      ? "Creating..."
-                      : "Create Patient"}
-                  </Button>
-                </div>
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="bg-purple-200 text-white border-purple-200 hover:bg-purple-300 rounded-lg px-6 py-2"
+                >
+                  Save & close
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || createPatientMutation.isPending}
+                  className="bg-[#051438] text-white hover:bg-[#051438]/90 rounded-lg px-6 py-2"
+                >
+                  {isSubmitting || createPatientMutation.isPending
+                    ? "Creating..."
+                    : "Create appointment"}
+                </Button>
               </div>
             </div>
           </div>
